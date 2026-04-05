@@ -6,11 +6,15 @@
 -- ============================================================
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
 local LP = Players.LocalPlayer
 
 local KEY_SERVER = "https://h6rnyx-keyserver.vercel.app/api/checkkey"
 local WORKINK_LINK = "https://work.ink/2tqZ/keyserver"
+local SAVE_FILE = "h6rnyx_key.txt"
 
 local function checkKey(key)
     local httpFunc = (syn and syn.request) or (http and http.request) or request
@@ -37,138 +41,165 @@ local function checkKey(key)
     end
 end
 
--- GUI de key
-local keyGui = Instance.new("ScreenGui", LP.PlayerGui)
-keyGui.Name = "KeySystem"
-keyGui.ResetOnSpawn = false
-keyGui.DisplayOrder = 9999
+local function saveKey(key)
+    pcall(function() writefile(SAVE_FILE, key) end)
+end
 
-local bg = Instance.new("Frame", keyGui)
-bg.Size = UDim2.new(1, 0, 1, 0)
-bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-bg.BackgroundTransparency = 0.4
-bg.BorderSizePixel = 0
-
-local box = Instance.new("Frame", keyGui)
-box.Size = UDim2.new(0, 340, 0, 200)
-box.Position = UDim2.new(0.5, -170, 0.5, -100)
-box.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
-box.BorderSizePixel = 0
-Instance.new("UICorner", box).CornerRadius = UDim.new(0, 14)
-local st = Instance.new("UIStroke", box)
-st.Color = Color3.fromRGB(80, 40, 160)
-st.Thickness = 1.5
-
-local title = Instance.new("TextLabel", box)
-title.Size = UDim2.new(1, 0, 0, 36)
-title.Position = UDim2.new(0, 0, 0, 0)
-title.Text = "Anchored Alpha ESP"
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
-title.TextColor3 = Color3.fromRGB(200, 170, 255)
-title.BackgroundTransparency = 1
-
-local sub = Instance.new("TextLabel", box)
-sub.Size = UDim2.new(1, 0, 0, 20)
-sub.Position = UDim2.new(0, 0, 0, 32)
-sub.Text = "Ingresa tu key para continuar"
-sub.Font = Enum.Font.SourceSans
-sub.TextSize = 12
-sub.TextColor3 = Color3.fromRGB(120, 90, 180)
-sub.BackgroundTransparency = 1
-
-local inputBox = Instance.new("TextBox", box)
-inputBox.Size = UDim2.new(1, -32, 0, 36)
-inputBox.Position = UDim2.new(0, 16, 0, 66)
-inputBox.PlaceholderText = "Pega tu key aquí..."
-inputBox.Text = ""
-inputBox.Font = Enum.Font.Code
-inputBox.TextSize = 12
-inputBox.TextColor3 = Color3.fromRGB(220, 220, 255)
-inputBox.PlaceholderColor3 = Color3.fromRGB(90, 80, 120)
-inputBox.BackgroundColor3 = Color3.fromRGB(22, 20, 36)
-inputBox.BorderSizePixel = 0
-inputBox.ClearTextOnFocus = false
-Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 8)
-
-local statusLbl = Instance.new("TextLabel", box)
-statusLbl.Size = UDim2.new(1, -32, 0, 20)
-statusLbl.Position = UDim2.new(0, 16, 0, 108)
-statusLbl.Text = ""
-statusLbl.Font = Enum.Font.SourceSans
-statusLbl.TextSize = 12
-statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
-statusLbl.BackgroundTransparency = 1
-statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local getKeyBtn = Instance.new("TextButton", box)
-getKeyBtn.Size = UDim2.new(0, 130, 0, 34)
-getKeyBtn.Position = UDim2.new(0, 16, 0, 148)
-getKeyBtn.BackgroundColor3 = Color3.fromRGB(40, 36, 60)
-getKeyBtn.Text = "Obtener Key →"
-getKeyBtn.Font = Enum.Font.SourceSansBold
-getKeyBtn.TextSize = 12
-getKeyBtn.TextColor3 = Color3.fromRGB(160, 130, 255)
-getKeyBtn.BorderSizePixel = 0
-Instance.new("UICorner", getKeyBtn).CornerRadius = UDim.new(0, 8)
-
-local activateBtn = Instance.new("TextButton", box)
-activateBtn.Size = UDim2.new(0, 150, 0, 34)
-activateBtn.Position = UDim2.new(1, -166, 0, 148)
-activateBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
-activateBtn.Text = "Activar"
-activateBtn.Font = Enum.Font.SourceSansBold
-activateBtn.TextSize = 13
-activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-activateBtn.BorderSizePixel = 0
-Instance.new("UICorner", activateBtn).CornerRadius = UDim.new(0, 8)
-
-getKeyBtn.MouseButton1Click:Connect(function()
-    setclipboard(WORKINK_LINK)
-    statusLbl.TextColor3 = Color3.fromRGB(160, 130, 255)
-    statusLbl.Text = "Link copiado. Abriendo work.ink..."
-end)
-
-local checking = false
-activateBtn.MouseButton1Click:Connect(function()
-    if checking then return end
-    local key = inputBox.Text
-    if key == "" then
-        statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
-        statusLbl.Text = "Ingresa una key primero."
-        return
+local function loadKey()
+    local ok, content = pcall(function() return readfile(SAVE_FILE) end)
+    if ok and content and content ~= "" then
+        return content
     end
-    checking = true
-    activateBtn.Text = "Verificando..."
-    statusLbl.TextColor3 = Color3.fromRGB(200, 170, 255)
-    statusLbl.Text = "Validando key..."
+    return nil
+end
 
-    task.spawn(function()
-        local valid, msg = checkKey(key)
-        if valid then
-            statusLbl.TextColor3 = Color3.fromRGB(100, 255, 160)
-            statusLbl.Text = "Key válida. Cargando ESP..."
-            task.wait(0.8)
-            keyGui:Destroy()
-        else
-            statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
-            statusLbl.Text = "❌ " .. msg
-            activateBtn.Text = "Activar"
-            checking = false
-        end
+local function clearKey()
+    pcall(function() writefile(SAVE_FILE, "") end)
+end
+
+-- Intentar cargar key guardada
+local savedKey = loadKey()
+local keyValid = false
+
+if savedKey then
+    local valid, msg = checkKey(savedKey)
+    if valid then
+        keyValid = true
+    else
+        clearKey()
+    end
+end
+
+-- Si no hay key válida guardada, mostrar GUI
+if not keyValid then
+    local keyGui = Instance.new("ScreenGui", LP.PlayerGui)
+    keyGui.Name = "KeySystem"
+    keyGui.ResetOnSpawn = false
+    keyGui.DisplayOrder = 9999
+
+    local bg = Instance.new("Frame", keyGui)
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.4
+    bg.BorderSizePixel = 0
+
+    local box = Instance.new("Frame", keyGui)
+    box.Size = UDim2.new(0, 340, 0, 200)
+    box.Position = UDim2.new(0.5, -170, 0.5, -100)
+    box.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+    box.BorderSizePixel = 0
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 14)
+    local st = Instance.new("UIStroke", box)
+    st.Color = Color3.fromRGB(80, 40, 160)
+    st.Thickness = 1.5
+
+    local title = Instance.new("TextLabel", box)
+    title.Size = UDim2.new(1, 0, 0, 36)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.Text = "Anchored Alpha ESP"
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+    title.TextColor3 = Color3.fromRGB(200, 170, 255)
+    title.BackgroundTransparency = 1
+
+    local sub = Instance.new("TextLabel", box)
+    sub.Size = UDim2.new(1, 0, 0, 20)
+    sub.Position = UDim2.new(0, 0, 0, 32)
+    sub.Text = "Ingresa tu key para continuar"
+    sub.Font = Enum.Font.SourceSans
+    sub.TextSize = 12
+    sub.TextColor3 = Color3.fromRGB(120, 90, 180)
+    sub.BackgroundTransparency = 1
+
+    local inputBox = Instance.new("TextBox", box)
+    inputBox.Size = UDim2.new(1, -32, 0, 36)
+    inputBox.Position = UDim2.new(0, 16, 0, 66)
+    inputBox.PlaceholderText = "Pega tu key aquí..."
+    inputBox.Text = ""
+    inputBox.Font = Enum.Font.Code
+    inputBox.TextSize = 12
+    inputBox.TextColor3 = Color3.fromRGB(220, 220, 255)
+    inputBox.PlaceholderColor3 = Color3.fromRGB(90, 80, 120)
+    inputBox.BackgroundColor3 = Color3.fromRGB(22, 20, 36)
+    inputBox.BorderSizePixel = 0
+    inputBox.ClearTextOnFocus = false
+    Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 8)
+
+    local statusLbl = Instance.new("TextLabel", box)
+    statusLbl.Size = UDim2.new(1, -32, 0, 20)
+    statusLbl.Position = UDim2.new(0, 16, 0, 108)
+    statusLbl.Text = ""
+    statusLbl.Font = Enum.Font.SourceSans
+    statusLbl.TextSize = 12
+    statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+    statusLbl.BackgroundTransparency = 1
+    statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local getKeyBtn = Instance.new("TextButton", box)
+    getKeyBtn.Size = UDim2.new(0, 130, 0, 34)
+    getKeyBtn.Position = UDim2.new(0, 16, 0, 148)
+    getKeyBtn.BackgroundColor3 = Color3.fromRGB(40, 36, 60)
+    getKeyBtn.Text = "Obtener Key →"
+    getKeyBtn.Font = Enum.Font.SourceSansBold
+    getKeyBtn.TextSize = 12
+    getKeyBtn.TextColor3 = Color3.fromRGB(160, 130, 255)
+    getKeyBtn.BorderSizePixel = 0
+    Instance.new("UICorner", getKeyBtn).CornerRadius = UDim.new(0, 8)
+
+    local activateBtn = Instance.new("TextButton", box)
+    activateBtn.Size = UDim2.new(0, 150, 0, 34)
+    activateBtn.Position = UDim2.new(1, -166, 0, 148)
+    activateBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
+    activateBtn.Text = "Activar"
+    activateBtn.Font = Enum.Font.SourceSansBold
+    activateBtn.TextSize = 13
+    activateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    activateBtn.BorderSizePixel = 0
+    Instance.new("UICorner", activateBtn).CornerRadius = UDim.new(0, 8)
+
+    getKeyBtn.MouseButton1Click:Connect(function()
+        setclipboard(WORKINK_LINK)
+        statusLbl.TextColor3 = Color3.fromRGB(160, 130, 255)
+        statusLbl.Text = "Link copiado. Abriendo work.ink..."
     end)
-end)
 
-repeat task.wait() until not keyGui.Parent
+    local checking = false
+    activateBtn.MouseButton1Click:Connect(function()
+        if checking then return end
+        local key = inputBox.Text
+        if key == "" then
+            statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+            statusLbl.Text = "Ingresa una key primero."
+            return
+        end
+        checking = true
+        activateBtn.Text = "Verificando..."
+        statusLbl.TextColor3 = Color3.fromRGB(200, 170, 255)
+        statusLbl.Text = "Validando key..."
+
+        task.spawn(function()
+            local valid, msg = checkKey(key)
+            if valid then
+                saveKey(key)
+                statusLbl.TextColor3 = Color3.fromRGB(100, 255, 160)
+                statusLbl.Text = "Key válida. Cargando ESP..."
+                task.wait(0.8)
+                keyGui:Destroy()
+            else
+                statusLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+                statusLbl.Text = "❌ " .. msg
+                activateBtn.Text = "Activar"
+                checking = false
+            end
+        end)
+    end)
+
+    repeat task.wait() until not keyGui.Parent
+end
 
 -- ============================================================
 -- ESP (carga solo después de validar la key)
 -- ============================================================
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local UIS = game:GetService("UserInputService")
-local TS = game:GetService("TweenService")
-
 local gui = Instance.new("ScreenGui", LP.PlayerGui)
 gui.Name = "AnchoredESP"
 gui.ResetOnSpawn = false
@@ -559,27 +590,65 @@ Toggle(Content, "Coin Collector", Color3.fromRGB(255, 200, 0), function(v)
                     h.Name = "CoinESP"
                     h.FillColor = Color3.fromRGB(255, 200, 0)
                     h.OutlineColor = Color3.fromRGB(255, 240, 100)
-                    h.FillTransparency = 0.3
+                    h.FillTransparency = 0.2
                     h.OutlineTransparency = 0
+                    local bb = Instance.new("BillboardGui", target)
+                    bb.Name = "CoinESP"
+                    bb.Size = UDim2.new(0, 100, 0, 22)
+                    bb.StudsOffset = Vector3.new(0, 2.5, 0)
+                    bb.AlwaysOnTop = true
+                    local lbl = Instance.new("TextLabel", bb)
+                    lbl.Size = UDim2.new(1, 0, 1, 0)
+                    lbl.Text = "SingleCipher"
+                    lbl.Font = Enum.Font.SourceSansBold
+                    lbl.TextSize = 11
+                    lbl.TextColor3 = Color3.fromRGB(255, 220, 50)
+                    lbl.BackgroundTransparency = 1
+                    lbl.TextStrokeTransparency = 0.3
                 end
             end
         end
-        coinFarmConn = workspace.DescendantAdded:Connect(function(obj)
-            if obj.Name == "SingleCipher" and coinESP then
-                task.wait(0.05)
-                local target = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or (obj:IsA("BasePart") and obj or nil)
-                if target and not obj:FindFirstChild("CoinESP") then
+
+        workspace.DescendantAdded:Connect(function(obj)
+            if not coinESP then return end
+            if obj.Name == "SingleCipher" and not obj:FindFirstChild("CoinESP") then
+                local target = obj:IsA("BasePart") and obj
+                    or (obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")))
+                if target then
                     local h = Instance.new("Highlight", obj:IsA("Model") and obj or target)
                     h.Name = "CoinESP"
                     h.FillColor = Color3.fromRGB(255, 200, 0)
                     h.OutlineColor = Color3.fromRGB(255, 240, 100)
-                    h.FillTransparency = 0.3
+                    h.FillTransparency = 0.2
                     h.OutlineTransparency = 0
                 end
             end
         end)
+
+        coinFarmConn = task.spawn(function()
+            while coinESP do
+                local char = LP.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.Health > 0 then
+                    for _, obj in pairs(workspace:GetDescendants()) do
+                        if not coinESP then break end
+                        if obj.Name == "SingleCipher" then
+                            local part = obj:IsA("BasePart") and obj
+                                or (obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")))
+                            if part and part.Parent then
+                                part.CFrame = hrp.CFrame
+                                task.wait(0.08)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
     else
-        if coinFarmConn then coinFarmConn:Disconnect() coinFarmConn = nil end
+        coinESP = false
+        if coinFarmConn then task.cancel(coinFarmConn) coinFarmConn = nil end
         for _, obj in pairs(workspace:GetDescendants()) do
             local h = obj:FindFirstChild("CoinESP")
             if h then h:Destroy() end
