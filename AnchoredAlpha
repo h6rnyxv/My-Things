@@ -24,7 +24,7 @@ local function checkKey(key)
         Url = KEY_SERVER,
         Method = "POST",
         Headers = { ["Content-Type"] = "application/json" },
-        Body = HttpService:JSONEncode({ key = key })
+        Body = HttpService:JSONEncode({ key = key, roblox_username = LP.Name })
     })
 
     if not ok or not res then
